@@ -1,64 +1,52 @@
 const fs = require('fs');
+const path = require('path');
 let xml = null;
 
-function getJSCode(content) {
+function getPath(content) {
     return (
-        `import React from 'react';
-         import ${process.argv[4] || 'SvgIcon'} from '../${process.argv[4] || 'SvgIcon'}';
-            const ${process.argv[3]} = props => (
-                <${process.argv[4] || 'SvgIcon'} {...props}>
-                    ${content}
-                </${process.argv[4] || 'SvgIcon'}>
-            );
-
-            export default ${process.argv[3]};
-        `);
+        `<path ${content} />;`.replace("class", "className"));
 }
 
 function getStyle(content) {
     return (
-        `import React from 'react';
-         import ${process.argv[4] || 'SvgIcon'} from '../${process.argv[4] || 'SvgIcon'}';
-            const ${process.argv[3]} = props => (
-                <${process.argv[4] || 'SvgIcon'} {...props}>
-                    ${content}
-                </${process.argv[4] || 'SvgIcon'}>
-            );
-
-            export default ${process.argv[3]};
-        `);
+        `<style type="text/css">{"${content}"}</style>`
+    );
 }
 
-function getJSCode(content) {
+function getJSCode(xml, fname) {
     return (
         `import React from 'react';
          import ${process.argv[4] || 'SvgIcon'} from '../${process.argv[4] || 'SvgIcon'}';
-            const ${process.argv[3]} = props => (
+            const ${fname} = props => (
                 <${process.argv[4] || 'SvgIcon'} {...props}>
-                    ${content}
+                    ${getStyle(xml[1])}
+                    ${getPath(xml[3])}
                 </${process.argv[4] || 'SvgIcon'}>
             );
 
-            export default ${process.argv[3]};
+            export default ${fname};
         `);
 }
 
 function svgToReact() {
     process.chdir(process.argv[2]);
     fs.readdir(process.cwd(), function (err, files) {
-        files.some(function (file) {
+        files.forEach(function (file) {
             fs.readFile(file, (err, data) => {
                 if (err) throw err;
                 xml = data.toString('utf8');
-                if (xml.indexOf('style') > -1) {
-                    console.log(xml.replace(/\r?\n|\r|\s/g,'').match(/^.*<style type="text\/css>">(.*)(\/>|<\/style>).*<path(.*)(\/>|<\/path>).*$/)[1]);
-                    console.log(xml.replace(/\r?\n|\r|\s/g,'').match(/^.*<style(.*)(\/>|<\/style>).*<path(.*)(\/>|<\/path>).*$/)[3]);
+                if (xml.indexOf('<style') > -1) {
+                    xml = xml.replace(/\r?\n|\r|\s/g, '').match(/^.*<styletype="text\/css">(.*)(\/>|<\/style>).*<path(.*)(\/>|<\/path>).*$/);
+                    fs.writeFile(file + '.js', getJSCode(xml, path.basename(file, '.svg').replace('-','_')), function(err) {
+                        if(err) {
+                            return console.log(err);
+                        }                    
+                    }); 
                 } else {
                     console.log(false)
                 }
-                
+
             });
-            return true;
         })
     });
 }
