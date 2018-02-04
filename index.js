@@ -43,7 +43,7 @@ function svgToReact() {
                         }                    
                     }); 
                 } else {
-                    console.log(false)
+                    console.log(false) //Add no-style case
                 }
 
             });
